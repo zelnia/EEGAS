@@ -274,11 +274,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   h2: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: "bold",
   },
   w100: {
+    alignSelf: 'stretch',
     width:'100%',
+    minWidth:200,
   },
   centro: {
     alignItems: 'center',
