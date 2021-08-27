@@ -3,40 +3,60 @@ import { StyleSheet, Text, TextInput, View, TouchableOpacity, Platform, Alert, S
 import NetInfo  from "@react-native-community/netinfo";
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// var CheckConnectivity = () => {
-//   // For Android devices
-//   if (Platform.OS === "android") {
-//     NetInfo.isConnected.fetch().then(isConnected => {
-//       if (isConnected) {
-//         Alert.alert("You are online!");
-//       } else {
-//         Alert.alert("You are offline!");
-//       }
-//     });
-//   } else if (Platform.OS === "ios")  {
-//     // For iOS devices
-//     NetInfo.isConnected.addEventListener(
-//       "connectionChange",
-//       this.handleFirstConnectivityChange
-//     );
-//   }
-// };
+async function storeData(key,value){
+  try {
+    await AsyncStorage.setItem(key, value)
+    console.log('Data successfully saved '+key+" "+value);
+  } catch (e) {
+    console.log(e);
+  }
+}
 
+async function getData(key){
+    let value = await AsyncStorage.getItem(key);
+    return value;
+}
 
-// var handleFirstConnectivityChange = isConnected => {
-//   NetInfo.isConnected.removeEventListener(
-//     "connectionChange",
-//     this.handleFirstConnectivityChange
-//   );
-//   if (isConnected === false) {
-//     Alert.alert("You are offline!");
-//   } else {
-//     Alert.alert("You are online!");
-//   }
-// };
+async function getLocal(navigation) {  
+  let lstoken = await getData('@token_cliente');
+  let nome_cliente = await getData('@nome_cliente');  
+  if(lstoken!==null){ 
+    navigation.navigate('schermata1', {
+      user: nome_cliente,
+      token: lstoken,
+    });  
+  }
+};  
+
+const apiroot="https://www.m2r-crm-test.it/dashboard/app/script/backend5/api/V1/";
+const XAUTHTOKEN="hbGciOiJIUzI1NiJ9.Sb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2";
+async function ApiRequest(endpoint,jbody,token,callback){
+  await fetch(apiroot+endpoint, {
+    //ode: "no-cors",
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'X-AUTH-TOKEN': XAUTHTOKEN,
+      'TOKEN-CLIENTE': token
+    }, 
+    body: jbody    
+  })    
+  .then((response) => response.json())
+  .then((json) => { 
+    if(callback!==null){
+      callback(json);
+    }
+  })
+  .catch((error) => {
+    console.error(error);
+  }); 
+}
 
 function Accesso({ navigation }) {
+  getLocal(navigation);
   const [user, setuser] = useState('')
   const [pwd, setpwd] = useState('')
   var Value = user;
@@ -77,7 +97,7 @@ function Accesso({ navigation }) {
                         Alert.alert("Sei offline!");
                       }
                   });                    
-                  fetch('https://www.m2r-crm-test.it/dashboard/app/script/backend5/api/V1/chiamata_1.php', {
+                  fetch(apiroot+'chiamata_1.php', {
                     //ode: "no-cors",
                     method: 'POST',
                     headers: {
@@ -85,26 +105,27 @@ function Accesso({ navigation }) {
                       'Content-Type': 'application/json',
                       'X-AUTH-TOKEN': 'hbGciOiJIUzI1NiJ9.Sb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2'
                     },
-                    body: JSON.stringify({
-                      "input_data": {
-                        "cf": "BRTLSE86A66G224X",
-                        "cc": "C0000005"
-                      }
-                    })    
                     // body: JSON.stringify({
                     //   "input_data": {
-                    //       "cf": Value,
-                    //       "cc": secret_Value
+                    //     "cf": "BRTLSE86A66G224X",
+                    //     "cc": "C0000005"
                     //   }
                     // })    
+                    body: JSON.stringify({
+                      "input_data": {
+                          "cf": Value,
+                          "cc": secret_Value
+                      }
+                    })    
                   })    
                   .then((response) => response.json())
-                  .then((json) => {                
+                  .then((json) => { 
+                    storeData("@token_cliente",json.output_data.token_cliente);  
+                    storeData("@nome_cliente",json.output_data.nome_cliente);          
                     navigation.navigate('schermata1', {
                       user: json.output_data.nome_cliente,
-                      //pwd: secret_Value,
+                      token: json.output_data.token_cliente
                     });
-                    console.log("XXX "+json.output_data.nome_cliente);
                   })
                   .catch((error) => {
                     console.error(error);
@@ -224,11 +245,32 @@ function Registrazione({ navigation }) {
   );
 }
 const schermata1 = ({ navigation, route }) => {
+  const jbody=JSON.stringify({
+    "input_data": {
+      "tipo_richiesta":"dati_anagrafici"
+    }
+  }); 
   return (
     <View style={styles.container}>
       <View style={[{maxHeight:400}, styles.divinterno2, styles.w100]}>
         <Text style={styles.h2}>Benvenuto, {route.params.user}</Text> 
+        {/* <Text style={styles.h2}>Benvenuto, {route.params.user}</Text>  */}
         <Text style={styles.mt15}>Ti trovi nel tuo centro di controllo: da qui potrai verificare le tue fatture e molto altro...</Text> 
+        <TouchableOpacity
+          onPress={
+            () => ApiRequest("dati_anagrafici.php",jbody,route.params.token,
+              function naviga(asyncjson){
+                navigation.navigate('DatiAnagrafici', {
+                  user: route.params.user,
+                  token: route.params.token,
+                  jdati: asyncjson
+                });
+              }
+            )
+          }
+          style={[styles.bordomsblu, styles.mt15, styles.py10, styles.w100, styles.centro]}>
+          <Text style={{ fontSize: 20, color: 'mediumslateblue' }}>Dati Anagrafici</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('Accesso')}
           style={[styles.bordomsblu, styles.mt15, styles.py10, styles.w100, styles.centro]}>
@@ -247,28 +289,24 @@ const schermata1 = ({ navigation, route }) => {
       </View>
     </View>
   );
-  // } else {
-  //   return (
-  //     <View style={styles.container}>
-  //       <View style={[{maxHeight:350}, styles.divinterno1]}>
-  //         <Text style={styles.h2}>Dati errati</Text> 
-  //         <Text style={styles.mt15}>Per favore inserisci i dati corretti oppure procedi alla registrazione</Text> 
-  //         <TouchableOpacity
-  //           onPress={() => navigation.navigate('Accesso')}
-  //           style={[{ backgroundColor: 'lightgrey' }, styles.mt15, styles.py10, styles.w100, styles.centro]}>
-  //           <Text style={{ fontSize: 20, color: '#fff' }}>Accedi</Text>
-  //         </TouchableOpacity>
-  //         <TouchableOpacity
-  //           onPress={() => navigation.navigate('Registrazione')}
-  //           style={[{ backgroundColor: 'limegreen' }, styles.mt15, styles.py10, styles.w100, styles.centro]}>
-  //           <Text style={{ fontSize: 20, color: '#fff' }}>Registrati</Text>
-  //         </TouchableOpacity>
-  //       </View>
-  //     </View>
-  //   );
-  // }
 }; 
 
+const DatiAnagrafici = ({ navigation, route }) => { 
+  var dati=route.params.jdati;
+  console.log(dati);
+  var info="";
+  for (const element of dati) {
+    info=info+"<Text style={styles.h2}>"+JSON.stringify(element)+"</Text>";
+  }
+  return (
+    <View style={styles.container}>
+      <View style={[{maxHeight:400}, styles.divinterno2, styles.w100]}>
+        <Text style={styles.h2}>Dati Anagrafici di {route.params.user}</Text> 
+        {dati}
+      </View>
+    </View>
+  );
+}; 
 
 const Stack = createStackNavigator();
 
@@ -279,6 +317,7 @@ function App() {
         <Stack.Screen name="Accesso" component={Accesso} />
         <Stack.Screen name="schermata1" component={schermata1} options={{ title: 'Centro di controllo' }} />
         <Stack.Screen name="Registrazione" component={Registrazione} />
+        <Stack.Screen name="DatiAnagrafici" component={DatiAnagrafici} />
       </Stack.Navigator>
     </NavigationContainer>
   );
