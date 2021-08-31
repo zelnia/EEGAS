@@ -1,5 +1,5 @@
 import React, { useState } from 'react'; 
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Platform, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, Text,FlatList, TextInput, View, TouchableOpacity, Platform, Alert, SafeAreaView, ScrollView } from 'react-native';
 import NetInfo  from "@react-native-community/netinfo";
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -293,16 +293,35 @@ const schermata1 = ({ navigation, route }) => {
 
 const DatiAnagrafici = ({ navigation, route }) => { 
   var dati=route.params.jdati;
-  console.log(dati);
-  var info="";
-  for (const element of dati) {
-    info=info+"<Text style={styles.h2}>"+JSON.stringify(element)+"</Text>";
-  }
+  console.log({dati});
+  const renderItem = ({ item }) => (
+    <View style={[styles.container2, styles.w100]}>
+      <Text>Punto: <strong>{item.punto}</strong></Text>
+      <View  style={[styles.separator]}></View>
+      <Text>Indirizzo: {item.indirizzo}</Text>
+      <Text>Città: {item.citta} {item.provincia} {item.cap}</Text>
+      <Text>Riferimento Email: {item.email}</Text>
+      <Text>Cumulo: {item.cumulo}</Text>
+      <Text>Classe Utenza: {item.classe_utenza}</Text>
+      <Text>Data: {item.data_apertura}</Text>
+      <Text>Numero Utenza: {item.nr_utenza}</Text>
+      <Text>Numero Cliente: {item.nr_cliente}</Text>
+      <Text>Offerta: {item.descrizione_offerta}</Text>
+      <Text>Tensione: {item.tens_nominale}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={[{maxHeight:400}, styles.divinterno2, styles.w100]}>
-        <Text style={styles.h2}>Dati Anagrafici di {route.params.user}</Text> 
-        {dati}
+        <Text style={[styles.w100]}>Dati Anagrafici di punti di</Text> 
+        <Text style={[styles.h2,styles.w100]}>{route.params.user}</Text> 
+        <FlatList
+          style={{width:'100%'}}
+          data={dati.output_data}
+          renderItem={renderItem}
+          keyExtractor={item => item.punto}
+        />
       </View>
     </View>
   );
@@ -358,6 +377,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding:25,
   },
+  container2: {
+    flex: 1,
+    backgroundColor: '#f7f4ee',
+    justifyContent: 'left',
+    padding:5,
+    margin:5
+  },
+  separator: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignSelf: 'stretch',
+    width:'100%',
+    padding:1,
+    marginBottom:5
+  },
   safeareaview: {
     flex: 1,
     backgroundColor: '#444',
@@ -394,5 +428,16 @@ const styles = StyleSheet.create({
   },
   centro: {
     alignItems: 'center',
+  },item: {
+    backgroundColor: "#f7ead7",
+    padding: 20,
+    marginVertical: 8
+  },
+  title: {
+    fontSize: 24
+  },
+  header: {
+    fontSize: 32,
+    backgroundColor: "#fff"
   }
 });
