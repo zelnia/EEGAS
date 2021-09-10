@@ -244,10 +244,15 @@ function Registrazione({ navigation }) {
     </SafeAreaView>
   );
 }
-const schermata1 = ({ navigation, route }) => {
-  const jbody=JSON.stringify({
+const schermata1 = ({ navigation, route }) => {console.log(route.params.token);
+  const janagrafici=JSON.stringify({
     "input_data": {
       "tipo_richiesta":"dati_anagrafici"
+    }
+  }); 
+  const jfatt=JSON.stringify({
+    "input_data": {
+        "tipo_richiesta":"dati_fatture"
     }
   }); 
   return (
@@ -258,12 +263,12 @@ const schermata1 = ({ navigation, route }) => {
         <Text style={styles.mt15}>Ti trovi nel tuo centro di controllo: da qui potrai verificare le tue fatture e molto altro...</Text> 
         <TouchableOpacity
           onPress={
-            () => ApiRequest("dati_anagrafici.php",jbody,route.params.token,
-              function naviga(asyncjson){
+            () => ApiRequest("dati_anagrafici.php",janagrafici,route.params.token,
+              function naviga(async_anagraf){
                 navigation.navigate('DatiAnagrafici', {
                   user: route.params.user,
                   token: route.params.token,
-                  jdati: asyncjson
+                  jdati: async_anagraf
                 });
               }
             )
@@ -272,14 +277,20 @@ const schermata1 = ({ navigation, route }) => {
           <Text style={{ fontSize: 20, color: 'mediumslateblue' }}>Dati Anagrafici</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate('Accesso')}
+          onPress={
+            
+            () => ApiRequest("dati_fatture.php",jfatt,route.params.token,
+              function naviga(async_fatt){
+                navigation.navigate('DatiFatture', {
+                  user: route.params.user,
+                  token: route.params.token,
+                  jdati: async_fatt
+                });
+              }
+            )
+          }
           style={[styles.bordomsblu, styles.mt15, styles.py10, styles.w100, styles.centro]}>
-          <Text style={{ fontSize: 20, color: 'mediumslateblue' }}>Fatture Elettricità</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Registrazione')}
-          style={[styles.bordomsblu, styles.mt15, styles.py10, styles.w100, styles.centro]}>
-          <Text style={{ fontSize: 20, color: 'mediumslateblue' }}>Fatture Gas Naturale</Text>
+          <Text style={{ fontSize: 20, color: 'mediumslateblue' }}>Fatture</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('Registrazione')}
@@ -293,7 +304,6 @@ const schermata1 = ({ navigation, route }) => {
 
 const DatiAnagrafici = ({ navigation, route }) => { 
   var dati=route.params.jdati;
-  console.log({dati});
   const renderItem = ({ item }) => (
     <View style={[styles.container2, styles.w100]}>
       <Text>Punto: <strong>{item.punto}</strong></Text>
@@ -327,6 +337,46 @@ const DatiAnagrafici = ({ navigation, route }) => {
   );
 }; 
 
+const DatiFatture = ({ navigation, route }) => { 
+  var dati=route.params.jdati;
+  console.log("Test");
+  console.log({dati});
+  const renderItem = ({ item }) => (
+    <View style={[styles.container2, styles.w100]}>
+      <Text>Emissione: <strong>{item.emissione}</strong></Text>
+      <View  style={[styles.separator]}></View>
+      <Text>Documento: <strong>{item.doc}</strong></Text>
+      <Text>Utenza:: <strong>{item.nr_utenza}</strong></Text>
+      <Text>Cliente: <strong>{item.nr_cliente}</strong></Text>
+      <Text>Nominativo: <strong>{item.nome_completo}</strong></Text>
+      <Text>Data di apertura: <strong>{item.data_apertura}</strong></Text>
+      <Text>Data di chiusura: <strong>{item.data_chiusura}</strong></Text>
+      <Text>Data di emissione: <strong>{item.emissione}</strong></Text>
+      <Text>Data di scadenza: <strong>{item.scadenza}</strong></Text>
+      <Text>Totale: <strong>{item.tot_a_pagare}</strong></Text>
+      <Text>Indirizzo: <strong>{item.indirizzo_sped}</strong></Text>
+      <Text>Cap: <strong>{item.cap_sped}</strong></Text>
+      <Text>Città: <strong>{item.citta_sped}</strong></Text>
+      <Text>Provincia: <strong>{item.prov_sped}</strong></Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={[{maxHeight:400}, styles.divinterno2, styles.w100]}>
+        <Text style={[styles.w100]}>Dati Fatture</Text> 
+        <Text style={[styles.h2,styles.w100]}>{route.params.user}</Text> 
+        <FlatList
+          style={{width:'100%'}}
+          data={dati.output_data}
+          renderItem={renderItem}
+          keyExtractor={item => item.punto}
+        />
+      </View>
+    </View>
+    
+  );
+}; 
 const Stack = createStackNavigator();
 
 function App() {
@@ -337,6 +387,7 @@ function App() {
         <Stack.Screen name="schermata1" component={schermata1} options={{ title: 'Centro di controllo' }} />
         <Stack.Screen name="Registrazione" component={Registrazione} />
         <Stack.Screen name="DatiAnagrafici" component={DatiAnagrafici} />
+        <Stack.Screen name="DatiFatture" component={DatiFatture} />
       </Stack.Navigator>
     </NavigationContainer>
   );
